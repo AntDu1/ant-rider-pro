@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Ant Rider Pro</title>
+<style>
+body { margin:0; overflow:hidden; background:#111; color:white; font-family:sans-serif; }
+canvas { display:block; margin:20px auto; background:#222; }
+#ui { position:absolute; top:10px; left:10px; font-size:18px; }
+</style>
+</head>
+<body>
+<div id="ui">Tempo: <span id="time">0.0</span>s</div>
+<canvas id="game" width="400" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+let car = { x: 180, y: 480, w: 40, h: 70 };
+let obstacles = [];
+let score = 0;
+let speed = 5;
+let gameOver = false;
+let startTime = Date.now();
+
+function spawnObstacle() {
+  if (gameOver) return;
+  let x = Math.random() * 300 + 50;
+  obstacles.push({ x, y: -60, w: 50, h: 60 });
+}
+setInterval(spawnObstacle, 700);
+
+canvas.addEventListener("touchstart", e => {
+  if (gameOver) return;
+  let tx = e.touches[0].clientX - canvas.offsetLeft;
+  car.x = tx - 20;
+});
+
+document.addEventListener("keydown", e => {
+  if (gameOver) return;
+  if (e.key === "ArrowLeft") car.x -= 60;
+  if (e.key === "ArrowRight") car.x += 60;
+});
+
+function checkCollision() {
+  for (let o of obstacles) {
+    if (car.x < o.x + o.w && car.x + car.w > o.x &&
+        car.y < o.y + o.h && car.y + car.h > o.y) return true;
+  }
+  return false;
+}
+
+function update() {
+  if (gameOver) return;
+  ctx.clearRect(0, 0, 400, 600);
+
+  // Strada
+  ctx.fillStyle = "#222";
+  ctx.fillRect(0, 0, 400, 600);
+  ctx.fillStyle = "#555";
+  ctx.fillRect(40, 0, 20, 600);
+  ctx.fillRect(340, 0, 20, 600);
+
+  // Auto giocatore
+  ctx.fillStyle = "lime";
+  ctx.fillRect(car.x, car.y, car.w, car.h);
+
+  // Ostacoli
+  ctx.fillStyle = "red";
+  for (let i = 0; i < obstacles.length; i++) {
+    let o = obstacles[i];
+    o.y += speed;
+    ctx.fillRect(o.x, o.y, o.w, o.h);
+    if (o.y > 650) obstacles.splice(i--, 1);
+  }
+
+  if (checkCollision()) {
+    gameOver = true;
+    alert("Game Over! Tempo: " + ((Date.now() - startTime)/1000).toFixed(1) + "s");
+    return;
+  }
+
+  score++;
+  if (score % 200 === 0) speed += 0.3;
+
+  document.getElementById("time").textContent = ((Date.now() - startTime)/1000).toFixed(1);
+
+  requestAnimationFrame(update);
+}
+update();
+</script>
+</body>
+</html>
